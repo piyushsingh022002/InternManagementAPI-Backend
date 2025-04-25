@@ -40,6 +40,9 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddScoped<InternRepository>();
 builder.Services.AddScoped<InternService>();
 
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                     .AddEnvironmentVariables(); // Adds environment variables as a fallback for production.
+
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
@@ -49,16 +52,17 @@ builder.Services.AddAuthentication("Bearer")
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+            ValidIssuer = builder.Configuration["Jwt:Issuer"], // From appsettings.json or environment
+            ValidAudience = builder.Configuration["Jwt:Audience"], // From appsettings.json or environment
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])) // From appsettings.json or environment
         };
     });
+
 
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IDbConnection>(sp =>
-    new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
+    new SqlConnection(builder.Configuration.GetConnectionString("CONNECTIONSTRINGS_DEFAULTCONNECTION")));
 
 builder.Services.AddScoped<TaskRepository>();
 builder.Services.AddScoped<TaskService>();
@@ -71,10 +75,14 @@ builder.Services.AddCors(options =>
             .WithOrigins("http://localhost:3000", "https://intern-frontend-sooty.vercel.app/") // Add your Vercel domain here too!
             .AllowAnyHeader()
             .AllowAnyMethod()
+            .AllowCredentials()
             .WithExposedHeaders("Authorization"));
 });
 
 var app = builder.Build();
+
+
+
 
 // ✅ Allow Swagger always (Dev + Production)
 app.UseSwagger();
@@ -91,6 +99,7 @@ app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
