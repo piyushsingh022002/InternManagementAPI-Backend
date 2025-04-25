@@ -72,12 +72,16 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
         policy => policy
-            .WithOrigins("https://intern-frontend-sooty.vercel.app/") // Add your Vercel domain here too!,      "http://localhost:3000";
+            .WithOrigins(
+                "https://intern-frontend-sooty.vercel.app",
+                "http://localhost:3000"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials()
             .WithExposedHeaders("Authorization"));
 });
+
 
 var app = builder.Build();
 app.UseCors("AllowFrontend");
@@ -96,7 +100,7 @@ app.UseSwaggerUI(c =>
 app.UseStaticFiles();
 
 // ✅ Enable CORS
-app.UseCors("AllowFrontend");
+
 
 app.UseHttpsRedirection();
 
