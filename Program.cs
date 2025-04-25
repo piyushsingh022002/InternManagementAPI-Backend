@@ -7,10 +7,8 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add controllers
 builder.Services.AddControllers();
 
-// Register Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -38,8 +36,10 @@ builder.Services.AddSwaggerGen(options =>
         { jwtSecurityScheme, Array.Empty<string>() }
     });
 });
+
 builder.Services.AddScoped<InternRepository>();
 builder.Services.AddScoped<InternService>();
+
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
@@ -56,18 +56,19 @@ builder.Services.AddAuthentication("Bearer")
     });
 
 builder.Services.AddAuthorization();
+
 builder.Services.AddScoped<IDbConnection>(sp =>
     new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<TaskRepository>();
 builder.Services.AddScoped<TaskService>();
 builder.Services.AddSingleton<JwtService>();
-// Program.cs
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
         policy => policy
-            .WithOrigins("http://localhost:3000") // React's dev URL
+            .WithOrigins("http://localhost:3000", "https://your-vercel-frontend.vercel.app") // Add your Vercel domain here too!
             .AllowAnyHeader()
             .AllowAnyMethod()
             .WithExposedHeaders("Authorization"));
@@ -75,43 +76,24 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.UseCors("AllowFrontend");
-
-
-
-
-
-// Register JwtService
-
-
-// JWT Authentication Setup
-
-
-// var app = builder.Build();
-
-// Use Swagger only in development
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
+// ✅ Allow Swagger always (Dev + Production)
+app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Intern Management API V1");
 });
 
-}
+// ✅ Serve static files (important for Swagger UI JS/CSS)
+app.UseStaticFiles();
 
+// ✅ Enable CORS
+app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 
-// Auth middleware
 app.UseAuthentication();
 app.UseAuthorization();
-// app.UseEndpoints(endpoints => 
-// {
-//     endpoints.MapControllers(); // This enables attribute routing
-// });
 
-// Map controllers
 app.MapControllers();
 
 app.Run();
