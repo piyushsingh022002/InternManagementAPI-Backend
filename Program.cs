@@ -68,7 +68,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
         policy => policy
-            .WithOrigins("http://localhost:3000", "https://your-vercel-frontend.vercel.app") // Add your Vercel domain here too!
+            .WithOrigins("http://localhost:3000", "https://intern-frontend-sooty.vercel.app/") // Add your Vercel domain here too!
             .AllowAnyHeader()
             .AllowAnyMethod()
             .WithExposedHeaders("Authorization"));
