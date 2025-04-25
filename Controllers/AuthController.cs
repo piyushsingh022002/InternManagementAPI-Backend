@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace InternManagementAPI.Controllers;
 
 [ApiController]
-[Route("api/v1/auth")]
+[Route("api/auth")]
 public class AuthController : ControllerBase
 {
     private readonly JwtService _jwtService;
@@ -18,7 +18,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public IActionResult Login(LoginDTO dto)
+    public IActionResult Login([FromBody] LoginDTO dto)
     {
         // Hardcoded for now
         var users = new List<User>

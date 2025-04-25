@@ -40,20 +40,6 @@ builder.Services.AddSwaggerGen(options =>
 });
 builder.Services.AddScoped<InternRepository>();
 builder.Services.AddScoped<InternService>();
-builder.Services.AddScoped<IDbConnection>(sp =>
-    new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddScoped<TaskRepository>();
-builder.Services.AddScoped<TaskService>();
-
-
-
-
-
-// Register JwtService
-builder.Services.AddSingleton<JwtService>();
-
-// JWT Authentication Setup
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
@@ -70,8 +56,38 @@ builder.Services.AddAuthentication("Bearer")
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddScoped<IDbConnection>(sp =>
+    new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<TaskRepository>();
+builder.Services.AddScoped<TaskService>();
+builder.Services.AddSingleton<JwtService>();
+// Program.cs
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy => policy
+            .WithOrigins("http://localhost:3000") // React's dev URL
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .WithExposedHeaders("Authorization"));
+});
 
 var app = builder.Build();
+
+app.UseCors("AllowFrontend");
+
+
+
+
+
+// Register JwtService
+
+
+// JWT Authentication Setup
+
+
+// var app = builder.Build();
 
 // Use Swagger only in development
 if (app.Environment.IsDevelopment())
@@ -80,11 +96,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
 app.UseHttpsRedirection();
 
 // Auth middleware
 app.UseAuthentication();
 app.UseAuthorization();
+// app.UseEndpoints(endpoints => 
+// {
+//     endpoints.MapControllers(); // This enables attribute routing
+// });
 
 // Map controllers
 app.MapControllers();
