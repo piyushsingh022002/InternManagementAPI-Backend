@@ -41,23 +41,28 @@ builder.Services.AddScoped<InternRepository>();
 builder.Services.AddScoped<InternService>();
 
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                     .AddEnvironmentVariables(); // Adds environment variables as a fallback for production.
+                     .AddEnvironmentVariables();
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
+        var jwtKey = builder.Configuration["Jwt:Key"];
+        if (string.IsNullOrEmpty(jwtKey))
+        {
+            throw new InvalidOperationException("JWT Key is not configured in appsettings.json or environment variables.");
+        }
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"], // From appsettings.json or environment
-            ValidAudience = builder.Configuration["Jwt:Audience"], // From appsettings.json or environment
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])) // From appsettings.json or environment
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
-
 
 builder.Services.AddAuthorization();
 
@@ -68,43 +73,37 @@ builder.Services.AddScoped<TaskRepository>();
 builder.Services.AddScoped<TaskService>();
 builder.Services.AddSingleton<JwtService>();
 
+// CORS configuration
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend",
-        policy => policy
-            .WithOrigins(
-                "https://intern-frontend-sooty.vercel.app",
-                "http://localhost:3000"
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:3000", // Local frontend
+                "https://intern-frontend-sooty.vercel.app" // Production frontend
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials()
-            .WithExposedHeaders("Authorization"));
+            .AllowCredentials() // Required for credentials: 'include' (if used)
+            .WithExposedHeaders("Authorization")
+            .SetPreflightMaxAge(TimeSpan.FromMinutes(10)); // Cache preflight response
+    });
 });
 
-
 var app = builder.Build();
+
+// Enable CORS early in the pipeline
 app.UseCors("AllowFrontend");
 
-
-
-
-// ✅ Allow Swagger always (Dev + Production)
+// Enable Swagger for development and production
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Intern Management API V1");
 });
 
-// ✅ Serve static files (important for Swagger UI JS/CSS)
 app.UseStaticFiles();
-
-// ✅ Enable CORS
-
-
 app.UseHttpsRedirection();
-
-
 app.UseAuthentication();
 app.UseAuthorization();
 

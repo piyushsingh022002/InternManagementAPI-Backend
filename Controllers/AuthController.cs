@@ -29,9 +29,10 @@ public class AuthController : ControllerBase
 
         var user = users.SingleOrDefault(u => u.Username == dto.Username && u.Password == dto.Password);
 
-        if (user == null) return Unauthorized("Invalid credentials");
+        if (user == null) return Unauthorized(new { message = "Invalid credentials" });
 
         var token = _jwtService.GenerateToken(user);
+        Response.Headers.Add("Access-Control-Expose-Headers", "Authorization");
         return Ok(new { token });
     }
 
@@ -48,7 +49,7 @@ public class AuthController : ControllerBase
         return Ok($"Hello {User.Identity?.Name}, you are authenticated.");
     }
 
-     [Authorize(Roles = "Intern")]
+    [Authorize(Roles = "Intern")]
     [HttpGet("intern")]
     public IActionResult InternOnlyEndpoint()
     {
@@ -61,5 +62,4 @@ public class AuthController : ControllerBase
     {
         return Ok("Welcome, HR! You can manage everything.");
     }
-
 }
